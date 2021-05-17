@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.31205.134
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HookIat", "HookIat\HookIat.vcxproj", "{0A85F0D0-115F-4C9E-82FE-9C3434E0482F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DllInjector", "DllInjector\DllInjector.vcxproj", "{D194C7EE-4B03-42C4-84F7-5EE26AD150B4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{0A85F0D0-115F-4C9E-82FE-9C3434E0482F}.Release|x64.Build.0 = Release|x64
 		{0A85F0D0-115F-4C9E-82FE-9C3434E0482F}.Release|x86.ActiveCfg = Release|Win32
 		{0A85F0D0-115F-4C9E-82FE-9C3434E0482F}.Release|x86.Build.0 = Release|Win32
+		{D194C7EE-4B03-42C4-84F7-5EE26AD150B4}.Debug|x64.ActiveCfg = Debug|x64
+		{D194C7EE-4B03-42C4-84F7-5EE26AD150B4}.Debug|x64.Build.0 = Debug|x64
+		{D194C7EE-4B03-42C4-84F7-5EE26AD150B4}.Debug|x86.ActiveCfg = Debug|Win32
+		{D194C7EE-4B03-42C4-84F7-5EE26AD150B4}.Debug|x86.Build.0 = Debug|Win32
+		{D194C7EE-4B03-42C4-84F7-5EE26AD150B4}.Release|x64.ActiveCfg = Release|x64
+		{D194C7EE-4B03-42C4-84F7-5EE26AD150B4}.Release|x64.Build.0 = Release|x64
+		{D194C7EE-4B03-42C4-84F7-5EE26AD150B4}.Release|x86.ActiveCfg = Release|Win32
+		{D194C7EE-4B03-42C4-84F7-5EE26AD150B4}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
