@@ -9,6 +9,8 @@
 #include <tchar.h>
 #include <filesystem>
 
+// https://github.com/i-saint/RemoteTalk/blob/89fa111/.RemoteTalk/Plugin/RemoteTalkVOICEROID/RemoteTalkVOICEROIDEx.cpp#L7
+// http://titech-ssr.blog.jp/archives/1047454763.html
 
 HANDLE FindProcess(LPTSTR pattern)
 {
