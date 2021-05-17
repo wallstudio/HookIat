@@ -42,9 +42,9 @@ NTSTATUS WINAPI HookedNtQuerySystemInformation(SYSTEM_INFORMATION_CLASS infoClas
         auto next = (Entry*)((SIZE_T)entry + (SIZE_T)entry->NextEntryOffset);
         if (0 == wcsncmp(next->ImageName.Buffer, L"notepad.exe", next->ImageName.Length))
         {
-            static WCHAR fakeName[] = L"らくがき帖";
-            next->ImageName = UNICODE_STRING{ _countof(fakeName), _countof(fakeName) + 1, fakeName };
-            //entry->NextEntryOffset = next->NextEntryOffset == 0 ? 0 : (entry->NextEntryOffset + next->NextEntryOffset);
+            //static WCHAR fakeName[] = L"らくがき帖";
+            //next->ImageName = UNICODE_STRING{ _countof(fakeName), _countof(fakeName) + 1, fakeName };
+            entry->NextEntryOffset = next->NextEntryOffset == 0 ? 0 : (entry->NextEntryOffset + next->NextEntryOffset);
             return status;
         }
         entry = next;
@@ -86,6 +86,8 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD reason, LPVOID _)
 {
     if (reason == DLL_PROCESS_ATTACH)
     {
+        MessageBox(NULL, TEXT("DLL attached."), TEXT("HookIat"), MB_OK);
+
         auto funcptr = IATfind("NtQuerySystemInformation");
         DWORD oldrights, newrights = PAGE_READWRITE;
         VirtualProtect(funcptr, sizeof(LPVOID), newrights, &oldrights);
