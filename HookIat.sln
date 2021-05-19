@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HookIat", "HookIat\HookIat.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DllInjector", "DllInjector\DllInjector.vcxproj", "{D194C7EE-4B03-42C4-84F7-5EE26AD150B4}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HeapInspector", "HeapInspector\HeapInspector.vcxproj", "{5769147E-2290-4C9F-BCB9-E3CACD13D9DD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{D194C7EE-4B03-42C4-84F7-5EE26AD150B4}.Release|x64.Build.0 = Release|x64
 		{D194C7EE-4B03-42C4-84F7-5EE26AD150B4}.Release|x86.ActiveCfg = Release|Win32
 		{D194C7EE-4B03-42C4-84F7-5EE26AD150B4}.Release|x86.Build.0 = Release|Win32
+		{5769147E-2290-4C9F-BCB9-E3CACD13D9DD}.Debug|x64.ActiveCfg = Debug|x64
+		{5769147E-2290-4C9F-BCB9-E3CACD13D9DD}.Debug|x64.Build.0 = Debug|x64
+		{5769147E-2290-4C9F-BCB9-E3CACD13D9DD}.Debug|x86.ActiveCfg = Debug|Win32
+		{5769147E-2290-4C9F-BCB9-E3CACD13D9DD}.Debug|x86.Build.0 = Debug|Win32
+		{5769147E-2290-4C9F-BCB9-E3CACD13D9DD}.Release|x64.ActiveCfg = Release|x64
+		{5769147E-2290-4C9F-BCB9-E3CACD13D9DD}.Release|x64.Build.0 = Release|x64
+		{5769147E-2290-4C9F-BCB9-E3CACD13D9DD}.Release|x86.ActiveCfg = Release|Win32
+		{5769147E-2290-4C9F-BCB9-E3CACD13D9DD}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
