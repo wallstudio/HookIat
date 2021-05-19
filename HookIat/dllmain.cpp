@@ -4,6 +4,7 @@
 #include <ntstatus.h>
 #include <stdlib.h>
 #include <iostream>
+#include <codecvt>
 
 // https://snoozy.hatenablog.com/entry/2020/03/28/001631
 // https://qiita.com/cha1aza/items/f64dc4351517a2477ef1
@@ -51,22 +52,25 @@ NTSTATUS WINAPI HookedNtQuerySystemInformation(SYSTEM_INFORMATION_CLASS infoClas
     }     while (entry->NextEntryOffset != 0);
 }
 
-template<typename T>
-T* RvaToVa(SIZE_T rva)
+template<typename T = void>
+T* Offset(void* base, SIZE_T rva)
 {
-    auto base = (SIZE_T)GetModuleHandle(0);
-    auto va = base + rva;
+    auto va = reinterpret_cast<SIZE_T>(base) + rva;
     return reinterpret_cast<T*>(va);
 }
+template<typename T>
+T* RvaToVa(SIZE_T offset) { return Offset<T>(GetModuleHandleW(nullptr), offset); }
 
-IMAGE_THUNK_DATA* IATfind(const char* function)
+IMAGE_THUNK_DATA* IATfind(const std::wstring& function)
 {
-    PIMAGE_DOS_HEADER pImgDosHeaders = (PIMAGE_DOS_HEADER)GetModuleHandle(0);
-    PIMAGE_NT_HEADERS pImgNTHeaders = (PIMAGE_NT_HEADERS)((LPBYTE)pImgDosHeaders + pImgDosHeaders->e_lfanew);
-    PIMAGE_IMPORT_DESCRIPTOR pImgImportDesc = (PIMAGE_IMPORT_DESCRIPTOR)((LPBYTE)pImgDosHeaders + pImgNTHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+    PIMAGE_DOS_HEADER pImgDosHeaders = reinterpret_cast<PIMAGE_DOS_HEADER>(GetModuleHandleW(nullptr));
+    PIMAGE_NT_HEADERS pImgNTHeaders = Offset<IMAGE_NT_HEADERS>(pImgDosHeaders, pImgDosHeaders->e_lfanew);
+    PIMAGE_IMPORT_DESCRIPTOR pImgImportDesc = Offset<IMAGE_IMPORT_DESCRIPTOR>(pImgDosHeaders, pImgNTHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
 
     if (pImgDosHeaders->e_magic != IMAGE_DOS_SIGNATURE)
-        std::cout << "libPE Error : e_magic is no valid DOS signature" << std::endl;
+        std::wcout << L"libPE Error : e_magic is no valid DOS signature" << std::endl;
+
+    auto targetName = std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>>().to_bytes(function.c_str());
 
     for (IMAGE_IMPORT_DESCRIPTOR* iid = pImgImportDesc; iid->Name != NULL; iid++) {
         auto dllName = RvaToVa<char>(iid->Name);
@@ -75,7 +79,7 @@ IMAGE_THUNK_DATA* IATfind(const char* function)
             auto ia = RvaToVa<IMAGE_THUNK_DATA>(iid->OriginalFirstThunk)[funcIdx];
             if (ia.u1.Function == NULL) break;
             if (ia.u1.Ordinal >> (sizeof(ia.u1.Ordinal) * 8 - 1)) continue;
-            if (0 != _stricmp(function, RvaToVa<IMAGE_IMPORT_BY_NAME>(ia.u1.Function)->Name)) continue;
+            if (0 != _stricmp(targetName.c_str(), RvaToVa<IMAGE_IMPORT_BY_NAME>(ia.u1.Function)->Name)) continue;
             return RvaToVa<IMAGE_THUNK_DATA>(iid->FirstThunk) + funcIdx;
         }
     }
@@ -86,12 +90,12 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD reason, LPVOID _)
 {
     if (reason == DLL_PROCESS_ATTACH)
     {
-        MessageBox(NULL, TEXT("DLL attached."), TEXT("HookIat"), MB_OK);
+        MessageBoxW(NULL, L"DLL attached.", L"HookIat", MB_OK);
 
-        auto funcptr = IATfind("NtQuerySystemInformation");
+        auto funcptr = IATfind(L"NtQuerySystemInformation");
         DWORD oldrights, newrights = PAGE_READWRITE;
         VirtualProtect(funcptr, sizeof(LPVOID), newrights, &oldrights);
-        funcptr->u1.Function = (LONGLONG)HookedNtQuerySystemInformation;
+        funcptr->u1.Function = reinterpret_cast<LONGLONG>(HookedNtQuerySystemInformation);
         VirtualProtect(funcptr, sizeof(LPVOID), oldrights, &newrights);
     }
     return TRUE;

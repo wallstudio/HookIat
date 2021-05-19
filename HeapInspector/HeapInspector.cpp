@@ -3,6 +3,7 @@
 #include <iostream>
 #include <winternl.h>
 #include <memory>
+#include <fmt/format.h>
 
 // https://github.com/processhacker/processhacker/blob/e96989/ProcessHacker/memprv.c#L757
 
@@ -25,33 +26,31 @@ typedef NTSTATUS(NTAPI* NtQueryVirtualMemoryCallbacl)(
     HANDLE ProcessHandle, PVOID BaseAddress, MEMORY_INFORMATION_CLASS MemoryInformationClass,
     MEMORY_BASIC_INFORMATION* MemoryInformation, SIZE_T MemoryInformationLength, PSIZE_T ReturnLength);
 
-template<typename T>
-T* RvaToVa(T* base, SIZE_T rva)
+template<typename T = void>
+T* Offset(void* base, SIZE_T rva)
 {
-    auto va = (SIZE_T)base + rva;
+    auto va = reinterpret_cast<SIZE_T>(base) + rva;
     return reinterpret_cast<T*>(va);
 }
 
 int main(int argc, char* argv[])
 {
     // heapの一部にマーキング
-    auto data = std::unique_ptr<char>(new char[1024*1024]);
-    auto text = std::string("MakiMakiKawaiiYatta!");
-    memcpy(data.get(), text.data(), text.size());
-    std::cout << "store to [" << std::hex << (SIZE_T)data.get() << "]" << std::endl;
+    auto text = std::wstring(L"MakiMakiKawaiiYatta!");
+    std::wcout << fmt::format(L"store to [{0}]", static_cast<const void*>(text.data())) << std::endl;
 
-    auto nt = LoadLibrary(TEXT("ntdll.dll"));
+    auto nt = LoadLibraryW(L"ntdll.dll");
     if (nt == nullptr) exit(-1);
-    
     auto fpNtQueryVirtualMemory = reinterpret_cast<NtQueryVirtualMemoryCallbacl>(GetProcAddress(nt, "NtQueryVirtualMemory"));
+
     auto base = (void*)0;
-    MEMORY_BASIC_INFORMATION basicInfo;
-    for(auto base = (void*)0; ; base = RvaToVa(base, basicInfo.RegionSize))
+    MEMORY_BASIC_INFORMATION basicInfo = {0};
+    for(auto base = (void*)0; ; base = Offset(base, basicInfo.RegionSize))
     {
         auto handle = GetCurrentProcess();
         auto status = fpNtQueryVirtualMemory(handle, base, MEMORY_INFORMATION_CLASS::MemoryBasicInformation, &basicInfo, sizeof(MEMORY_BASIC_INFORMATION), nullptr);
         if (!NT_SUCCESS(status)) break;
 
-        std::cout << "[" << std::hex << basicInfo.BaseAddress << "] " << std::dec << basicInfo.RegionSize << "B" << std::endl;
+        std::wcout << fmt::format(L"[{0}] {1} B", basicInfo.BaseAddress, basicInfo.RegionSize) << std::endl;
     }
 }

@@ -8,33 +8,34 @@
 #include <regex>
 #include <tchar.h>
 #include <filesystem>
+#include <fmt/format.h>
 
 // https://github.com/i-saint/RemoteTalk/blob/89fa111/.RemoteTalk/Plugin/RemoteTalkVOICEROID/RemoteTalkVOICEROIDEx.cpp#L7
 // http://titech-ssr.blog.jp/archives/1047454763.html
 
-HANDLE FindProcess(LPTSTR pattern)
+HANDLE FindProcess(std::wstring& pattern)
 {
-    std::wcout << TEXT("Search process, ") << pattern << std::endl;
+    std::wcout << fmt::format(L"Search process, {0}", pattern) << std::endl;
     auto targetProcessRegex = std::wregex(pattern);
 
     DWORD sizeInByte;
-    DWORD processeIds[2048];
-    EnumProcesses(processeIds, sizeof(processeIds), &sizeInByte);
+    auto processeIds = std::vector<DWORD>(2048);
+    EnumProcesses(processeIds.data(), processeIds.size() * sizeof(DWORD), &sizeInByte);
+    processeIds.resize(sizeInByte / sizeof(DWORD));
 
     HANDLE handle;
-    for (size_t i = 0; i < sizeInByte / sizeof(DWORD); i++)
+    for (auto processId : processeIds)
     {
-        handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processeIds[i]);
-        auto nameBuff = std::array<TCHAR, MAX_PATH>();
-        GetProcessImageFileName(handle, nameBuff.data(), nameBuff.size());
-        auto name = std::wstring(nameBuff.data());
+        handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processId);
+        auto name = std::wstring(MAX_PATH, L'\0');
+        GetProcessImageFileNameW(handle, name.data(), name.size());
         if (std::regex_match(name, targetProcessRegex))
         {
-            std::wcout << TEXT("Found process, ") << name << TEXT(" ") << handle << std::endl;
+            std::wcout << fmt::format(L"Found process, {0} ({1})", name, handle)<< std::endl;
             return handle;
         }
     }
-    std::wcout << TEXT("Not Found process") << std::endl;
+    std::wcout << L"Not Found process" << std::endl;
     return 0;
 }
 
@@ -47,7 +48,7 @@ bool InjectRoutine(HANDLE target, std::filesystem::path& dllPath)
     WriteProcessMemory(target, targetHeap, dllPath.wstring().c_str(), (dllPath.wstring().size() + 1) * sizeof(TCHAR), &written);
 
 #pragma warning(suppress : 6387 )
-    auto fpLoadLibraryW = GetProcAddress(GetModuleHandle(TEXT("kernel32")), "LoadLibraryW");
+    auto fpLoadLibraryW = GetProcAddress(GetModuleHandleW(L"kernel32"), "LoadLibraryW");
     auto thread = CreateRemoteThread(target, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(fpLoadLibraryW), targetHeap, 0, nullptr);
     if (thread == nullptr) return false;
     WaitForSingleObject(thread, INFINITE);
@@ -59,19 +60,14 @@ bool InjectRoutine(HANDLE target, std::filesystem::path& dllPath)
 
 int main(int argc, char* argv[])
 {
-    auto targetProcessName = std::wstring();
-    //std::wcin >> targetProcessName;
-    targetProcessName = TEXT("Taskmgr");
-#pragma warning(suppress : 6387 )
-    auto targetPattern = std::vector<TCHAR>(targetProcessName.size() + 10);
-    _stprintf_s(targetPattern.data(), targetPattern.size(), TEXT(".*%s.*"), targetProcessName.c_str());
+    auto targetName = std::wstring();
+    auto targetPattern = fmt::format(L".*{0}.*", L"Taskmgr");
 
-    auto target = FindProcess(targetPattern.data());
+    auto target = FindProcess(targetPattern);
     if (target == 0) exit(-1);
 
-    auto exePath = std::array<TCHAR, MAX_PATH>();
-    GetModuleFileName(GetModuleHandle(nullptr), exePath.data(), exePath.size());
-    auto dir = std::filesystem::path(exePath.data()).parent_path();
-    auto dllPath = dir.append(TEXT("HookIat.dll"));
+    auto exePath = std::wstring(MAX_PATH, L'\0');
+    GetModuleFileNameW(GetModuleHandle(nullptr), exePath.data(), exePath.size());
+    auto dllPath = std::filesystem::path(exePath.c_str()).parent_path().append(TEXT("HookIat.dll"));
     InjectRoutine(target, dllPath);
 }
